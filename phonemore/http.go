@@ -29,6 +29,9 @@ type Model struct {
 	TouchScreen   bool   `json:"touchScreen"`   // done
 	NFC           bool   `json:"nfc"`           // done
 	WiFi          bool   `json:"wifi"`          // done
+
+	// ! this is used for the SDK_INT value which is also used for the os.version and ethernet values.
+	AndroidVersion int `json:"androidVersion"`
 }
 
 // ScrapeModels - scrapes x page (starts at index 1) and returns all models per phone on screen. Each page has at most 20 phones on screen, each phone can have any amount of models though.
@@ -73,7 +76,8 @@ func ScrapeModels(page int) (map[string]*Model, error) {
 
 var (
 	// ! space is important
-	widthHeightRegex = regexp.MustCompile(`Display resolution</td><td>[0-9]+x[0-9]+ pixels`)
+	widthHeightRegex    = regexp.MustCompile(`Display resolution</td><td>[0-9]+x[0-9]+ pixels`)
+	androidVersionRegex = regexp.MustCompile(`System version</td><td><a href="/systems/android/[0-9]+/">Android [0-9]+`)
 )
 
 // FillData - just fills in all the empty data in the Model struct
@@ -111,6 +115,15 @@ func (m *Model) FillData() error {
 	if err != nil {
 		return fmt.Errorf("res height - %v", err)
 	}
+	androidVer := androidVersionRegex.FindString(body)
+	if len(androidVer) == 0 {
+		return errors.New("unable to get android version")
+	}
+	num, err = strconv.Atoi(strings.Split(androidVer[49:], " ")[1])
+	if err != nil {
+		return fmt.Errorf("android ver - %v", err)
+	}
+	m.AndroidVersion = num
 	m.Height = num
 	m.TouchScreen = strings.Contains(body, "Capacitive Multitouch")
 	m.GPS = strings.Contains(body, "A-GPS")
@@ -118,5 +131,6 @@ func (m *Model) FillData() error {
 	m.Accelerometer = strings.Contains(body, "Accelerometer")
 	m.NFC = strings.Contains(body, "<tr><td>NFC</td><td><span class=item_check></span>Supported</td></tr>")
 	m.WiFi = strings.Contains(body, "<tr><td>WiFi</td><td><span class=item_check>")
+
 	return nil
 }
