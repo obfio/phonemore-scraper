@@ -115,6 +115,7 @@ func (m *Model) FillData() error {
 	if err != nil {
 		return fmt.Errorf("res height - %v", err)
 	}
+	m.Height = num
 	androidVer := androidVersionRegex.FindString(body)
 	if len(androidVer) == 0 {
 		return errors.New("unable to get android version")
@@ -124,7 +125,6 @@ func (m *Model) FillData() error {
 		return fmt.Errorf("android ver - %v", err)
 	}
 	m.AndroidVersion = num
-	m.Height = num
 	m.TouchScreen = strings.Contains(body, "Capacitive Multitouch")
 	m.GPS = strings.Contains(body, "A-GPS")
 	m.Gyro = strings.Contains(body, "Gyroscope")
